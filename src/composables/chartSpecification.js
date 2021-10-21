@@ -1,7 +1,7 @@
-const lineChart = (xAxisScaleDomain) => ({
+const lineChart = (selectedDatePickerRange) => ({
     "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
     "data": {
-      "url": "http://99bd-213-58-177-174.ngrok.io/data"
+      "url": "http://localhost:3000/data"
     },
     "transform": [
       {
@@ -67,6 +67,7 @@ const lineChart = (xAxisScaleDomain) => ({
           {
             "mark": {
               "description": "Overlay with gradient for temperature breach",
+              "clip": true,
               "type": "line",
               "fillOpacity": 0.5,
               "color": "#FF0000"
@@ -91,9 +92,7 @@ const lineChart = (xAxisScaleDomain) => ({
                 "field": "ts",
                 "type": "temporal",
                 "scale": {
-                  "domain": {
-                    "param": "brush"
-                  }
+                  "domain": selectedDatePickerRange
                 }
               },
               "y": {
@@ -110,6 +109,7 @@ const lineChart = (xAxisScaleDomain) => ({
             "width": 1000,
             "mark": {
               "type": "line",
+              "clip": true,
               "color": "#282828",
               "interpolate": "monotone"
             },
@@ -126,8 +126,12 @@ const lineChart = (xAxisScaleDomain) => ({
               "x": {
                 "field": "ts",
                 "type": "temporal",
+                "axis": {
+                  "labels": false,
+                  "title": false
+                },
                 "scale": {
-                  "domain": xAxisScaleDomain
+                  "domain": selectedDatePickerRange
                 }
               },
               "y": {
@@ -158,6 +162,7 @@ const lineChart = (xAxisScaleDomain) => ({
         "width": 1000,
         "height": 100,
         "mark": {
+          "clip": true,
           "type": "line",
           "color": "#282828",
           "interpolate": "monotone"
@@ -175,9 +180,7 @@ const lineChart = (xAxisScaleDomain) => ({
             "field": "ts",
             "type": "temporal",
             "scale": {
-              "domain": {
-                "param": "brush"
-              }
+              "domain": selectedDatePickerRange
             },
             "axis": {
               "grid": false,

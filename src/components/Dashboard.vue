@@ -1,10 +1,16 @@
 <template>
   <div class="flex flex-col justify-center gap-4">
     <div class="flex flex-row justify-center gap-1">
-      Selected range: {{xAxisScaleDomain}}
-      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('day')"> 1D </button>
-      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('week')"> 1W </button>
-      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('month')"> 1M </button>
+      <span style="display: none"> Selected range: {{selectedDatePickerRange}}</span>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="setSelectedRange('DAILY')"> 1D </button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="setSelectedRange('WEEKLY')"> 1W </button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="setSelectedRange('MONTHLY')"> 1M </button>
+      <input
+        @change="setSelectedDatePickerRange"
+        min='2021-04-08'
+        max='2021-10-08'
+        type="date"
+      />
     </div>
     <div class="shadow-md min-w-min">
       <div id="chart"></div>
@@ -20,39 +26,48 @@ import useChartSpecification from '@/composables/chartSpecification'
 export default {
   name: 'Dasboard',
   setup () {
-    const deriveXAxisScaleDomain = (val) => {
-      switch(val) {
-        case 'day': {
-          return {"unionWith": [{"expr": "now()"}, "2021-09-01T00:00:00"]}
-        }
-        case 'week': {
-          return {"unionWith": [{"expr": "now()"}, "2021-04-01T00:00:00"]}
-        }
-        case 'month': {
-          return [{"expr": "now() - 30"}]
-        }
-        default: {
-          return {"unionWith": [{"expr": "now()"}, "2021-04-01T00:00:00"]}
-        }
+    const selectedDatePickerRange = ref({ param: 'brush' })
+    const selectedRange = ref('')
+
+    const setSelectedRange = (rangeType) => {
+      selectedRange.value = rangeType
+      selectedDatePickerRange.value = { param: 'brush' }
+    }
+
+    const setSelectedDatePickerRange = (event) => {
+      selectedDatePickerRange.value = formatDate(event.target.value, selectedRange.value)
+    }
+
+    function formatDate(date, type) {
+      if (type === 'DAILY') {
+        const [year, month, day] = date.split('-');
+        return [{ year: parseInt(year), month: parseInt(month), date: parseInt(day) }, { year: parseInt(year), month: parseInt(month), date: parseInt(day) + 1 }]
+      }
+      if (type === 'WEEKLY') {
+        const [year, month, day] = date.split('-');
+        return [{ year: parseInt(year), month: parseInt(month), date: parseInt(day) }, { year: parseInt(year), month: parseInt(month), date: parseInt(day) + 7 }]
+      }
+      if (type === 'MONTHLY') {
+        const [year, month] = date.split('-');
+        return [{ year: parseInt(year), month: parseInt(month) }, { year: parseInt(year), month: parseInt(month) + 1 }]
       }
     }
 
-    const xAxisScaleDomain = ref(deriveXAxisScaleDomain())
+    // const xAxisScaleDomain = ref(deriveXAxisScaleDomain())
     const { lineChart } = useChartSpecification
 
     const chart = computed(() => {
-      return embed('#chart', lineChart(deriveXAxisScaleDomain(xAxisScaleDomain.value)), {"actions": false})
+      return embed('#chart', lineChart(selectedDatePickerRange.value), {"actions": false})
     });
-
-    const rangeChange = (val) => {
-      xAxisScaleDomain.value = val
-    }
 
     return {
       lineChart,
-      rangeChange,
-      xAxisScaleDomain,
-      chart
+      formatDate,
+      chart,
+      selectedRange,
+      setSelectedRange,
+      selectedDatePickerRange,
+      setSelectedDatePickerRange
     }
   }
 }
