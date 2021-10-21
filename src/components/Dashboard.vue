@@ -1,49 +1,73 @@
 <template>
-  <div class="hello">
-    <h1>{{chartData}}</h1>
+  <div class="flex flex-col justify-center gap-4">
+    <div class="flex flex-row justify-center gap-1">
+      Selected range: {{xAxisScaleDomain}}
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('day')"> 1D </button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('week')"> 1W </button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" @click="rangeChange('month')"> 1M </button>
+    </div>
+    <div class="shadow-md min-w-min">
+      <div id="chart"></div>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onCreated } from 'vue'
-import axios from 'axios'
-export default {
+import { ref, computed } from 'vue'
+import embed from 'vega-embed'
+import useChartSpecification from '@/composables/chartSpecification'
 
+export default {
   name: 'Dasboard',
   setup () {
-    const chartData = ref(null)
-    const fetchChart = () => {
-      return axios.get('./db.json').then((response) => {
-        chartData.value = response.data
-      })
+    const deriveXAxisScaleDomain = (val) => {
+      switch(val) {
+        case 'day': {
+          return {"unionWith": [{"expr": "now()"}, "2021-09-01T00:00:00"]}
+        }
+        case 'week': {
+          return {"unionWith": [{"expr": "now()"}, "2021-04-01T00:00:00"]}
+        }
+        case 'month': {
+          return [{"expr": "now() - 30"}]
+        }
+        default: {
+          return {"unionWith": [{"expr": "now()"}, "2021-04-01T00:00:00"]}
+        }
+      }
     }
-    onCreated(() => {
-      fetchChart()
-    })
+
+    const xAxisScaleDomain = ref(deriveXAxisScaleDomain())
+    const { lineChart } = useChartSpecification
+
+    const chart = computed(() => {
+      return embed('#chart', lineChart(deriveXAxisScaleDomain(xAxisScaleDomain.value)), {"actions": false})
+    });
+
+    const rangeChange = (val) => {
+      xAxisScaleDomain.value = val
+    }
+
     return {
-      fetchChart
+      lineChart,
+      rangeChange,
+      xAxisScaleDomain,
+      chart
     }
-  },
-  props: {
-    msg: String
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+ #chart {
+   box-shadow: 30px;
+   border-radius: 10px;
+ }
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
 }
 </style>
